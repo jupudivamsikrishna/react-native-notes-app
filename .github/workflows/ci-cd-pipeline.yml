@@ -1,0 +1,57 @@
+name: react-native-notes-app ci-cd-pipeline for React Native Notes App
+
+on:
+  push:
+    branches:
+      - main  # Trigger the pipeline on code push to the main branch
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    # Step 1: Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # Step 2: Set up Node.js environment
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'  # Specify the version of Node.js to use
+
+    # Step 3: Install dependencies
+    - name: Install dependencies
+      run: npm install
+
+    # Step 4: Run tests (if you have tests in your app)
+    - name: Run tests
+      run: npm test
+
+  deploy:
+    runs-on: windows-latest
+    needs: build  # Only deploy if the build job succeeds
+
+    steps:
+    # Step 1: Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # Step 2: Set up AWS CLI
+    - name: Set up AWS CLI
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: 'us-east-1'
+
+    # Step 3: Deploy to EC2 instance (using SSH)
+    - name: Deploy to AWS EC2
+      run: |
+        ssh -i /path/to/your/private-key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} <<EOF
+          cd /path/to/your/app
+          git pull origin main
+          npm install
+          npm start
+        EOF
+
